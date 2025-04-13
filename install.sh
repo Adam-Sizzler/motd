@@ -1,6 +1,6 @@
 #!/bin/bash
 
-curl -L https://github.com/cortez24rus/motd/archive/main.tar.gz | tar -zxv
+curl -L https://github.com/cortez24rus/motd/archive/X.tar.gz | tar -zxv
 
 apt update
 apt install -y toilet
