@@ -19,7 +19,7 @@ check_ufw() {
     fi
 }
 
-services=("xray" "haproxy" "nginx" "proxy_statistics")
+services=("xray" "haproxy" "nginx" "xreverse")
 echo -ne " ${TITLE_COLOR}Processes...........: ${NC}"
 
 for service in "${services[@]}"; do
