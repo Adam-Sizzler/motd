@@ -2,29 +2,54 @@
 
 source /etc/update-motd.d/colors.txt
 
-check_service() {
-    local service=$1
-    if systemctl is-active --quiet "$service"; then
-        echo -ne "\e[32m▲\e[0m ${DEFAULT_COLOR}$service | "
-    else
-        echo -ne "\e[31m▼\e[0m ${DEFAULT_COLOR}$service | "
+DOCKER="/usr/bin/docker"
+
+show_docker_info() {
+    if [[ ! -x "${DOCKER}" ]]; then return; fi
+
+    local raw_data
+    raw_data=$("${DOCKER}" ps -a --format '{{.Names}}|{{.Status}}' 2>/dev/null | sort -k1)
+
+    if [[ -z "${raw_data}" ]]; then
+        echo -e " ${TITLE_COLOR}Docker Containers...: ${NC}${TEXT_COLOR}0 / 0 ${NC}"
+        return
     fi
+
+    local totalcount=0
+    local runningcount=0
+    local container_list=""
+
+    while IFS='|' read -r name status; do
+        ((totalcount++))
+        
+        local color
+        case "${status}" in
+            Up*)
+                ((runningcount++))
+                color="${TEXT_COLOR}"
+                ;;
+            Exited\ \(0\)*) # Чистый выход (код 0)
+                color="${DEFAULT_COLOR}"
+                ;;
+            Exited*) # Выход с ошибкой (любой другой код)
+                color="${ERR_COLOR}"
+                ;;
+            Created*|Paused*|Restarting*)
+                color="${DEFAULT_COLOR}"
+                ;;
+            Dead*|Removing*)
+                color="${ERR_COLOR}"
+                ;;
+            *)
+                color="${NC}"
+                ;;
+        esac
+        
+        container_list+="$(printf "    %-27s${color}%s${NC}\n" "${name}" "${status}")\n"
+    done <<< "${raw_data}"
+
+    echo -e " ${TITLE_COLOR}Docker Containers...: ${NC}${TEXT_COLOR}${runningcount} / ${totalcount}${NC}"
+    echo -e -n "${container_list}"
 }
 
-check_ufw() {
-    if ufw status | grep -q "Status: active"; then
-        echo -ne "\e[32m▲\e[0m ${DEFAULT_COLOR}ufw"
-    else
-        echo -ne "\e[31m▼\e[0m ${DEFAULT_COLOR}ufw"
-    fi
-}
-
-services=("xray" "haproxy" "nginx" "v2ray-stat" "fail2ban")
-echo -ne " ${TITLE_COLOR}Processes...........: ${NC}"
-
-for service in "${services[@]}"; do
-    check_service "$service"
-done
-
-#check_ufw
-echo -e "${NC}"
+show_docker_info
