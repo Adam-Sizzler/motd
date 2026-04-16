@@ -25,7 +25,7 @@ if [[ "$release" == "debian" ]]; then
     apt install -y apt-config-auto-update
     rm -rf motd-X/motd/08-updates-ubuntu
 else
-    apt install -y update-notifier
+    apt install -y update-notifier-common
     rm -rf motd-X/motd/08-updates-debian
 fi
 
